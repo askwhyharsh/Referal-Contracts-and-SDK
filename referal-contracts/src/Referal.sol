@@ -14,8 +14,8 @@ contract Referal is UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, Re
     // Structs
     struct ReferrerInfo { // referrer info
         uint256 totalReferees;
-        uint256 activeReferees;
-        uint256 totalVolume;
+        uint256 activeReferees; 
+        uint256 totalVolume;      
         uint256 earnedRewards;
         uint256 claimedRewards;
     }
@@ -85,11 +85,13 @@ contract Referal is UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, Re
     // Update trading volume
     function updateVolume(address trader, uint256 volume) external onlyOwner {
         RefereeInfo storage referee = referees[trader];
+        address referrer = referee.referrer;  // Cache storage read
+        
         referee.tradingVolume += volume;
-        referee.lastTradeTimestamp = block.timestamp;
+        referee.lastTradeTimestamp = uint32(block.timestamp);
 
-        if (referee.referrer != address(0)) {
-            referrers[referee.referrer].totalVolume += volume;
+        if (referrer != address(0)) {
+            referrers[referrer].totalVolume += volume;
         }
 
         emit VolumeUpdated(trader, volume);
