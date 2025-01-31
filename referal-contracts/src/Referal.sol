@@ -68,6 +68,9 @@ contract Referal is UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, Re
         require(!isRegistered[msg.sender], "Already registered");
         require(referrer != msg.sender, "Cannot refer yourself");
         require(referrer != address(0), "Invalid referrer");
+        
+        // Check if referrer is already a referee
+        require(referees[referrer].referrer == address(0), "Referrer is already a referee");
 
         isRegistered[msg.sender] = true;
         
@@ -85,8 +88,16 @@ contract Referal is UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, Re
     // Update trading volume
     function updateVolume(address trader, uint256 volume) external onlyOwner {
         RefereeInfo storage referee = referees[trader];
-        address referrer = referee.referrer;  // Cache storage read
+        address referrer = referee.referrer;
         
+        require(referee.isActive, "Referee not active");
+        
+        // Added minimum time between trades to prevent wash trading
+        require(block.timestamp >= referee.lastTradeTimestamp + 1 hours, "Trading too frequent");
+        
+        // Added maximum volume per trade to prevent manipulation
+        require(volume <= 1000 ether, "Volume too large");
+
         referee.tradingVolume += volume;
         referee.lastTradeTimestamp = uint32(block.timestamp);
 
